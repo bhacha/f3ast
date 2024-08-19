@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "f3ast"
-version = "1.0.2"
+version = "1.0.3"
 description = "FEBID 3D Algorithm for Stream File Generation (F3AST)"
 authors = ["Luka Skoric <skoriclk@gmail.com>"]
 readme = "README.md"
