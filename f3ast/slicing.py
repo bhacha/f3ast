@@ -1,12 +1,12 @@
 import numpy as np
 import numpy.linalg as la
-from numba import config, njit, prange
+from numba import config, njit, prange, threading_layer
 
 # set the threading layer before any parallel target compilation
 config.THREADING_LAYER = "threadsafe"
 
 
-# @njit(parallel=True, fastmath=True)
+@njit(parallel=True, fastmath=True, debug=True, cache=True)
 def _numba_eqd_pts(start_nodes, conn_vecs, n_steps):
     pts = np.zeros((np.sum(n_steps), 2))
     end_indices = np.cumsum(n_steps)
