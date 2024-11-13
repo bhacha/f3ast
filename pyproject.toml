@@ -9,7 +9,7 @@ documentation = "https://f3ast.readthedocs.io/en/latest/"
 license = "GNU GENERAL PUBLIC LICENSE"
 
 [tool.poetry.dependencies]
-python = ">=3.9, <3.13"
+python = ">=3.9, <3.12"
 trimesh = "^3.22.5"
 numpy = "^1.20.2"
 matplotlib = "^3.7.2"
