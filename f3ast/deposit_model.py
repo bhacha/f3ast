@@ -301,3 +301,96 @@ class PhiAngleCorrectionModel(InheritModel):
         proximity_matrix = super().get_proximity_matrix(layer, *args)
         proximity_matrix *= self.angle_correction_function(self.layer_angles[layer])
         return proximity_matrix
+
+
+class HachaModel(InheritModel):
+    """Desorption-dominated model taking into account the heating via the resistance model.
+        But with some funkiness to try and spoof f3ast into handling the centers of the STL
+        
+        
+    Attributes:
+        struct (Structure):
+        gr (float): growth rate
+        k (float): temperature scaling parameter
+        sigma (float): deposit width
+    """
+
+    def __init__(
+        self,
+        struct,
+        gr: float,
+        k: float,
+        sigma: float,
+        single_pixel_width: float = 50.0,
+        **kwargs
+    ):
+        self.gr = gr
+        self.k = k
+        self.sigma = sigma
+
+        self.single_pixel_width = single_pixel_width
+
+        self._resistance = None
+        super().__init__(struct, **kwargs)
+
+    @property
+    def resistance(self):
+        """Resistance parameter."""
+        if self._resistance is None:
+            self.get_layer_parameters()
+        return self._resistance
+
+    def get_layer_parameters(self):
+        """Gets the resistance and stores it as an internal parameter."""
+        self._resistance = get_resistance(
+            self.struct, single_pixel_width=self.single_pixel_width
+        )
+
+    def proximity_fun(self, distances, resistance):
+        return (
+            self.gr
+            * np.exp(-self.k * resistance)
+            * np.exp(-(distances**2) / (2 * self.sigma**2))
+        )
+
+    def get_proximity_matrix(self, layer: int):
+        """Returns the proximity matrix using the distance matrix for the given layer."""
+        distance_matrix = self.get_distance_matrix(layer)
+        # each row of distance matrix has the resistance of the corresponding point
+        res = self.resistance[layer][distance_matrix.row]
+        # get the proximity matrix
+        proximity_matrix = distance_matrix.copy()
+        proximity_matrix.data = self.proximity_fun(distance_matrix.data, res)
+        return proximity_matrix
+
+    def get_nb_threshold(self):
+        """How far are the points considered neighbours."""
+        return 3 * self.sigma
+
+    @staticmethod
+    def calibration_fit_function(t, gr, k):
+        """Function for fitting the calibration."""
+        return 1 / k * np.log(k * gr * t + 1)
+
+    @staticmethod
+    def fit_calibration(dwell_times, lengths, gr0=0.1, k0=1):
+        """Fits the calibration and returns optimal parameters and the
+        fit function.
+
+        Args:
+            dwell_times (array): Array of measured dwell times.
+            lengths (array): Array of measured lengths.
+            gr0 (float, optional): Initial guess for GR. Defaults to 0.1.
+            k0 (float, optional): Initial guess for k. Defaults to 1.
+
+        Returns:
+            [type]: [description]
+        """
+        fn = DDModel.calibration_fit_function
+
+        popt, pcov = curve_fit(
+            fn, dwell_times, lengths, p0=[gr0, k0], bounds=(0, np.inf)
+        )
+        print("GR: ", popt[0])
+        print("k: ", popt[1])
+        return fn, popt, pcov

@@ -5,10 +5,12 @@ import matplotlib.pyplot as plt
 matplotlib.use('qtagg')
 '''
 Open a stream file and plot the data
+
+Stream files are formatted: dwell, x (pixels), y (pixels)
 '''
 
 #!%matplotlib
-file_name = 'phocrystal_0.05'
+file_name = 'streams/Cyl_Test_bigsingle_200gr_15k_4sig_p3'
 
 streamlist = []
 
@@ -32,12 +34,12 @@ def downsample(streamlist, factor):
         if len(streamline) > 8:
             # Ignore header lines
             streampoints = streamline.split()
-            xpos.append(int(streampoints[0]))
-            ypos.append(int(streampoints[1]))
-            dwell_time.append(int(streampoints[2]))
+            xpos.append(int(streampoints[1]))
+            ypos.append(int(streampoints[2]))
+            dwell_time.append(int(streampoints[0]))
     return xpos, ypos, dwell_time, new_points
 
-xpos, ypos, dwell_time, new_points = downsample(streamlist, .1)
+xpos, ypos, dwell_time, new_points = downsample(streamlist, 1)
 
 
 ordering = range(0,len(dwell_time))
@@ -64,4 +66,4 @@ def output_stream(filename, xpos, ypos, dwell_time):
             f.write(linestring + '\n')
 
 
-output_stream('teststream', xpos, ypos, dwell_time)
+# output_stream('teststream', xpos, ypos, dwell_time)
