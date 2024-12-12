@@ -12,7 +12,7 @@ def get_resistance(struct, single_pixel_width=50.0):
     Returns:
         list of (n,) arrays: Resistance per point in the slice.
     """
-
+    
     slices = struct.slices
     branches = struct.branches
     branch_lengths = struct.branch_lengths
