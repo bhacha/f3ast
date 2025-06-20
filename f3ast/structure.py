@@ -28,7 +28,7 @@ class Structure(trimesh.Trimesh):
 
         self.file_path = file_path
         self.clear_slicing()
-
+        
     @classmethod
     def from_file(cls, file_path: str, **kwargs):
         """Gets the structure from stl file.
@@ -87,6 +87,10 @@ class Structure(trimesh.Trimesh):
         """The thickness of layers"""
         return self.z_levels[1:] - self.z_levels[:-1]
 
+    def check_version(self):
+        version = "1.0.0"
+        print("This is the version from right now-"+version)
+        return version
     @property
     def is_sliced(self) -> bool:
         """Weather or not the structure is sliced.
@@ -201,6 +205,19 @@ class Structure(trimesh.Trimesh):
             axes: Matplotlib axes.
         """
         points = self.get_sliced_points()
+        return points3d(points, *args, **kwargs)
+    
+    def plot_point_range(self,point_min, point_max, *args, **kwargs):
+        """Plots the slices in matplotlib.
+
+        Returns:
+            axes: Matplotlib axes.
+        """
+        
+        points = self.get_sliced_points()
+        # new_point = np.reshape(points, (-1,3))
+        # masked_points = points[(points[:, 2] <= slice_max)]
+        points = points[point_min:point_max]
         return points3d(points, *args, **kwargs)
 
     def show(self):
