@@ -4,7 +4,17 @@ import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
-# settings can be defined manually in a dictionary:
+
+file_path = "SimpleCoil.stl"
+stream_filename = "SimpleCoil"
+scale_factor = 1
+GR0 = .200 # in um/s, base growth rate
+k = 1. #in 1/nm?, thermal conductivity 
+sigma = 4 # in nm, dwell size
+
+
+
+
 settings = {}
 settings["structure"] = {"pitch": 3, "fill": False}  # in nm
 settings["stream_builder"] = {
@@ -18,33 +28,30 @@ settings["stream_builder"] = {
 # pixel size for thermal resistance
 settings["dd_model"] = {"single_pixel_width": 50}
 
-file_path = "f3ast/examples/SimpleCoil.stl"
-struct = f3ast.Structure.from_file(file_path, **settings["structure"])
 
-# rotate: specify axis and angle in degrees
-# this is for example useful if FEBID growth is done with a tilted SEM sample stage
+
+struct = f3ast.Structure.from_file(file_path, **settings["structure"])
 rotation_axis, rotation_angle = (1, 0, 0), 90
+tilt_string = "90t100"
 struct.rotate(rotation_axis, rotation_angle)
 
-# In some cases (e.g. Helios 600) , stream files appear mirrored on the SEM screen
-# compared to the orientation of the initial stl structure.
-# If precise orientation of the structure (e.g. with respect to the GIS) is important,
-# a mirror operation can be applied across a plane with a given normal.
+
 struct.mirror(normal=(1, 0, 0))
 
 struct.centre()  # centers xy to zero and sets minimum z value to zero
-struct.rescale(1)  # scale the structure 3x
+struct.rescale(scale_factor)  # scale the structure 3x
 
-# # interactive plot for inspection
-# struct.show()
-
-
-GR0 = 50e-3 # in um/s, base growth rate
-k = 1. # in 1/nm?, thermal conductivity 
-sigma = 4.4 # in nm, dwell size
 
 # with correction due to thermal conductivity
 model = f3ast.DDModel(struct, GR0, k, sigma, **settings['dd_model'])
 
-ax, sc= struct.plot_slices(c=np.concatenate(model.resistance), cmap="hot")
-plt.show(block=True)
+stream_builder, dwell_solver = f3ast.StreamBuilder.from_model(model, **settings['stream_builder'])
+dwell_solver.print_total_time()
+
+
+strm = stream_builder.get_stream()
+
+# export with simple name
+
+out_filename = f"{stream_filename}_{GR0*1000:.0f}gr_{k*100:.0f}k_{sigma:.0f}sig_{tilt_string}_{scale_factor}x"
+strm.write(f"{out_filename}.str")

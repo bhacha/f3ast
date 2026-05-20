@@ -166,6 +166,11 @@ class DDModel(Model):
         )
 
     def proximity_fun(self, distances, resistance):
+        """
+        This is the growth function with the exponential proximity correction. The first term is the growth rate determined by calibratin. The second term, e^(-k*resistance) uses the resistances and k (from calibration) to calculate the thermal effects. The final term is the gaussian proximity correction. 
+        
+        """
+        
         return (
             self.gr
             * np.exp(-self.k * resistance)
@@ -173,13 +178,20 @@ class DDModel(Model):
         )
 
     def get_proximity_matrix(self, layer: int):
-        """Returns the proximity matrix using the distance matrix for the given layer."""
+        """Returns the proximity matrix using the distance matrix for the given layer.
+        
+        The proximity matrix is NxM (N=M) where the element M_nm is the distance between point M_n and M_m (if they're nearest neighbors). This is a sparse matrix, so most of it is zero (since proximity doesn't matter at far distances). This is essentially finding the distances between points. 
+        
+        This part uses the distance between point M_n and its neighbors (its "crowding") and the resistance of point M_n to apply the proximity function defined above.
+        
+        """
         distance_matrix = self.get_distance_matrix(layer)
         # each row of distance matrix has the resistance of the corresponding point
         res = self.resistance[layer][distance_matrix.row]
         # get the proximity matrix
         proximity_matrix = distance_matrix.copy()
-        proximity_matrix.data = self.proximity_fun(distance_matrix.data, res)
+        proximity_matrix.data = self.proximity_fun(distance_matrix.data, res)  
+        print(proximity_matrix)
         return proximity_matrix
 
     def get_nb_threshold(self):
